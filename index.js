@@ -2,6 +2,9 @@ import mysql from "mysql2/promise";
 
 import express from "express";
 
+import { isLogin } from "./middleware/isLogin.js";
+
+// console.log(isLogin);
 
 import cookieParser from "cookie-parser";
 
@@ -12,7 +15,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 app.use(express.json());
-
 
 app.use(cookieParser());
 
@@ -26,6 +28,18 @@ async function setupDatabase() {
       password: "",
       database: "BlysIntern",
     });
+
+
+
+  //   db.execute(`CREATE TABLE tasks(
+  //     id INT AUTO_INCREMENT PRIMARY KEY,
+  //     user_id INT NOT NULL,
+  //     title VARCHAR(255) NOT NULL,
+  //     description TEXT,
+  //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  //     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  //     FOREIGN KEY (user_id) REFERENCES users(id)
+  // )`);
 
     //! Register the user
     app.post("/register", async (req, res) => {
@@ -107,17 +121,13 @@ async function setupDatabase() {
         expiresIn: "1h",
       });
 
-      res.cookie('authToken', token, {
+      res.cookie("authToken", token, {
         httpOnly: true,
         secure: false, // Disable in development (no HTTPS)
         maxAge: 3600000, // 1 hour expiry
-        sameSite: 'lax', // 'strict' can block cookies in localhost
-        domain: 'localhost', // Only for localhost (optional)
-    });
-
-
-    
-    
+        sameSite: "lax", // 'strict' can block cookies in localhost
+        domain: "localhost", // Only for localhost (optional)
+      });
 
       res.status(200).json({
         message: "User logged in successfully",
@@ -128,58 +138,36 @@ async function setupDatabase() {
       });
     });
 
+    app.get("/dashboard", isLogin, async (req, res) => {
+      console.log("Hello");
 
-    app.get('/protected', async(req, res) => {
+      const [user] = await db.execute(`SELECT * FROM users WHERE id = ?`, [
+        req.user_id,
+      ]);
 
-        console.log("Hello i am inside protected route");
-        
-        // const token = req.cookies.authToken; // Automatically sent by browser
-        
+      console.log(user[0]);
 
-        //get token from the headers
-        const token = req.cookies.authToken;
-        
-        if (!token) return res.status(401).json({ message: 'Not Login or token expired' });
-      
-        //verify the token
-        // const token = req.headers['authorization']?.split(' ')[1]; // Bearer token
-        jwt.verify(token, 'anykey', async (err, decoded) => {
-            //Token is temnpered
-          if (err) return res.status(403).json({message:"Token is not valid"});
+      res.json({ message: "Access granted", LoggedInUserInfo: user[0] });
+    });
 
-          //If Token is valid
-          if(decoded){
+    app.get("/logout", async (req, res) => {
+      // console.log(req.cookies.authToken);
 
-            console.log("The user id is", decoded.id);
+      res.clearCookie("authToken");
 
-          }
-
-          req.user_id = decoded.id;
-
-        //   console.log(req.user);
-
-        const [user] = await db.execute(`SELECT * FROM users WHERE id = ?`, [
-            req.user_id,
-          ]);
-
-
-        console.log(user[0]);
-        
-          
-
-
-
-          res.json({ message: 'Access granted', decoded });
-        });
+      res.status(200).json({
+        message: "User logged out successfully",
       });
+    });
 
     //Create the task
-    app.post("/tasks", async (req, res) => {
+    app.post("/tasks", isLogin, async (req, res) => {
       const { title, description } = req.body;
 
-      await db.execute(`INSERT INTO tasks (title, description) VALUES(?,?)`, [
+      await db.execute(`INSERT INTO tasks (title, description, user_id) VALUES(?,?, ?)`, [
         title,
         description,
+        req.user_id,
       ]);
 
       res.status(201).json({
@@ -187,12 +175,20 @@ async function setupDatabase() {
       });
     });
 
-
-
     //get the Tasks
 
-    app.get("/tasks", async (req, res) => {
-      const [rows] = await db.execute(`Select * from tasks`);
+    app.get("/tasks", isLogin, async (req, res) => {
+      console.log(req.user_id);
+
+      const [rows] = await db.execute(`SELECT * FROM tasks WHERE user_id = ?`, [
+        req.user_id,
+      ]);
+
+      // console.log(user[0]);
+
+      // const [rows] = await db.execute(`Select * from tasks`);
+
+      // console.log(rows);
 
       res.status(200).json({
         message: "Tasks fetched successfully",
@@ -200,7 +196,7 @@ async function setupDatabase() {
       });
     });
 
-    app.delete("/tasks/:id", async (req, res) => {
+    app.delete("/tasks/:id", isLogin, async (req, res) => {
       const { id } = req.params;
 
       await db.execute(`DELETE FROM tasks WHERE id = ?`, [id]);
