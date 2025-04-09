@@ -85,16 +85,15 @@ const userLoginController = async (req, res) => {
       });
     }
     //! Generate a token
-    const token = jwt.sign({ id: user[0][0].id }, "anykey", {
+    const token = jwt.sign({ id: user[0][0].id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
     res.cookie("authToken", token, {
       httpOnly: true,
-      secure: false, // Disable in development (no HTTPS)
+      secure: process.env.NODE_ENV === "production", // Disable in development (no HTTPS)
       maxAge: 3600000, // 1 hour expiry
       sameSite: "lax", // 'strict' can block cookies in localhost
-      domain: "localhost", // Only for localhost (optional)
     });
 
     res.status(200).json({
