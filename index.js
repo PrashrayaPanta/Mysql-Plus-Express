@@ -1,17 +1,29 @@
-// Import required modules for the application
-import express from "express";          // Express framework for handling HTTP requests and routing
-import cookieParser from "cookie-parser"; // Middleware for parsing cookies in requests
-import cors from "cors";               // Middleware to enable Cross-Origin Resource Sharing (CORS) for your app
 
-const app = express(); // Create an instance of an Express app
+// / Express framework for handling HTTP requests and routing
+import express from "express";   
 
-// Load environment variables from a .env file using dotenv
-import dotenv from "dotenv"; // dotenv helps load environment variables from .env files
-dotenv.config(); // Automatically load the environment variables into the process.env object
+//!  Middleware for parsing cookies in requests
+
+import cookieParser from "cookie-parser"; 
+
+
+//!  Middleware to enable Cross-Origin Resource Sharing (CORS) for your app
+
+
+import cors from "cors";    
+
+
+//! Create an instance of an Express app
+
+const app = express(); 
+
+//! Load environment variables from a .env file using dotenv
+import dotenv from "dotenv"; 
+dotenv.config(); 
 
 // Middleware Setup
 app.use(cors()); // Use the CORS middleware to allow cross-origin requests
-// Without CORS, browsers will block requests from a different domain/port
+
 
 //!Port Initlixation
 const PORT = process.env.PORT || 3000;
