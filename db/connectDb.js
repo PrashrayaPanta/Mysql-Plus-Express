@@ -1,5 +1,9 @@
 import mysql from "mysql2/promise";
 
+import dotenv from "dotenv";
+
+dotenv.config();
+
 export const connectDB = async(req, res) =>{
     try{
         const db = await mysql.createConnection({
