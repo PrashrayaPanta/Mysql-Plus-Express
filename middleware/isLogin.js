@@ -11,7 +11,7 @@ export const isLogin = (req, res, next) =>{
     console.log(token);
     
     
-    if (!token) return res.status(401).json({ message: "No Token" });
+    if (!token) return res.status(401).json({ message: "Not Login or Token Expired" });
     //verify token
 
     const verifyToken = jwt.verify(token, "anykey", (err, decoded) => {
@@ -33,7 +33,7 @@ export const isLogin = (req, res, next) =>{
 
     }else{
 
-        return res.status(401).json({ message: 'Not Login or token expired' });
+        return res.status(401).json({ message: 'Token  is tempered' });
     }
 
 

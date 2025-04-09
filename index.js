@@ -1,273 +1,54 @@
-import mysql from "mysql2/promise";
+// Import required modules for the application
+import express from "express";          // Express framework for handling HTTP requests and routing
+import cookieParser from "cookie-parser"; // Middleware for parsing cookies in requests
+import cors from "cors";               // Middleware to enable Cross-Origin Resource Sharing (CORS) for your app
 
-import express from "express";
+const app = express(); // Create an instance of an Express app
 
-import { isLogin } from "./middleware/isLogin.js";
+// Load environment variables from a .env file using dotenv
+import dotenv from "dotenv"; // dotenv helps load environment variables from .env files
+dotenv.config(); // Automatically load the environment variables into the process.env object
 
-// console.log(isLogin);
+// Middleware Setup
+app.use(cors()); // Use the CORS middleware to allow cross-origin requests
+// Without CORS, browsers will block requests from a different domain/port
 
-import cookieParser from "cookie-parser";
+//!Port Initlixation
+const PORT = process.env.PORT || 3000;
 
-const app = express();
 
-import bcrypt from "bcryptjs";
+//!UserRoute
 
-import jwt from "jsonwebtoken";
+import userRouter from "./Routes/users.js";
 
+
+
+//!Task Route
+import postRouter from "./Routes/Post.js";
+
+
+//!Send the json reponse from the client
 app.use(express.json());
 
+
+//! To parse the cookie from client
 app.use(cookieParser());
 
-async function setupDatabase() {
-  try {
-    //to connect to mysql db
 
-    const db = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "BlysIntern",
-    });
 
+//!Routes
 
+//!User Routes
 
-  //   db.execute(`CREATE TABLE tasks(
-  //     id INT AUTO_INCREMENT PRIMARY KEY,
-  //     user_id INT NOT NULL,
-  //     title VARCHAR(255) NOT NULL,
-  //     description TEXT,
-  //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  //     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  //     FOREIGN KEY (user_id) REFERENCES users(id)
-  // )`);
+app.use("/", userRouter);
 
-    //! Register the user
-    app.post("/register", async (req, res) => {
-      const { username, email, password } = req.body;
+//!Task Routes
 
-      //! Validations
+app.use("/tasks", postRouter);
 
-      if (!username || !email || !password) {
-        return res.status(400).json({
-          message: "All fields are required",
-        });
-      }
-      const [rows] = await db.execute(`SELECT * FROM users WHERE email = ?`, [
-        email,
-      ]);
-      if (rows.length > 0) {
-        return res.status(400).json({
-          message: "User already exists",
-        });
-      }
 
-      //!hash user password
 
-      const salt = await bcrypt.genSalt(10);
-
-      const hashedPassword = await bcrypt.hash(password, salt);
-
-      //!create the user
-
-      const [result] = await db.execute(
-        `INSERT INTO users (username, email, password) VALUES(?,?,?)`,
-        [username, email, hashedPassword]
-      );
-
-      console.log(result);
-
-      //! Get the newly created User
-
-      const [newUser] = await db.execute(
-        `SELECT id, username, email FROM users WHERE id = ?`,
-        [result.insertId]
-      );
-
-      //! Send the response
-
-      res.status(201).json({
-        message: "User added successfully",
-        username: newUser[0].username,
-        email: newUser[0].email,
-        id: newUser[0].id,
-      });
-    });
-
-    //! Login the user
-    app.post("/login", async (req, res) => {
-      const { email, password } = req.body;
-
-      //! Check if user email exists
-
-      const user = await db.execute(`SELECT * FROM users WHERE email = ?`, [
-        email,
-      ]);
-
-      if (user[0].length === 0) {
-        return res.status(400).json({
-          message: "User does not exist",
-        });
-      }
-
-      //! Check if password is correct
-      const isMatch = await bcrypt.compare(password, user[0][0].password);
-      if (!isMatch) {
-        return res.status(400).json({
-          message: "Invalid credentials",
-        });
-      }
-      //! Generate a token
-      const token = jwt.sign({ id: user[0][0].id }, "anykey", {
-        expiresIn: "1h",
-      });
-
-      res.cookie("authToken", token, {
-        httpOnly: true,
-        secure: false, // Disable in development (no HTTPS)
-        maxAge: 3600000, // 1 hour expiry
-        sameSite: "lax", // 'strict' can block cookies in localhost
-        domain: "localhost", // Only for localhost (optional)
-      });
-
-      res.status(200).json({
-        message: "User logged in successfully",
-        token,
-        id: user[0][0].id,
-        username: user[0][0].username,
-        email: user[0][0].email,
-      });
-    });
-
-    app.get("/dashboard", isLogin, async (req, res) => {
-      console.log("Hello");
-
-      const [user] = await db.execute(`SELECT * FROM users WHERE id = ?`, [
-        req.user_id,
-      ]);
-
-      console.log(user[0]);
-
-      res.json({ message: "Access granted", LoggedInUserInfo: user[0] });
-    });
-
-    app.get("/logout", async (req, res) => {
-      // console.log(req.cookies.authToken);
-
-      res.clearCookie("authToken");
-
-      res.status(200).json({
-        message: "User logged out successfully",
-      });
-    });
-
-    //Create the task
-    app.post("/tasks", isLogin, async (req, res) => {
-      const { title, description } = req.body;
-
-      await db.execute(`INSERT INTO tasks (title, description, user_id) VALUES(?,?, ?)`, [
-        title,
-        description,
-        req.user_id,
-      ]);
-
-      res.status(201).json({
-        message: "Task added successfully",
-      });
-    });
-
-    //get the Tasks
-
-    app.get("/tasks", isLogin, async (req, res) => {
-      console.log(req.user_id);
-
-      const [rows] = await db.execute(`SELECT * FROM tasks WHERE user_id = ?`, [
-        req.user_id,
-      ]);
-
-      // console.log(user[0]);
-
-      // const [rows] = await db.execute(`Select * from tasks`);
-
-      // console.log(rows);
-
-      res.status(200).json({
-        message: "Tasks fetched successfully",
-        data: rows,
-      });
-    });
-
-    app.delete("/tasks/:id", isLogin, async (req, res) => {
-      const { id } = req.params;
-
-      await db.execute(`DELETE FROM tasks WHERE id = ?`, [id]);
-
-      res.status(200).json({
-        message: "Task deleted successfully",
-      });
-    });
-
-    //Add to db
-
-    //2. create a db
-
-    // const result = await db.execute(`CREATE DATABASE BlysIntern`);
-
-    // console.log(await db.execute("show databases"));
-
-    //3. we create the table
-
-    //  await db.execute(`CREATE TABLE BlysIntern.tasks(
-    //     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    //     title VARCHAR(255) NOT NULL,
-    //     description VARCHAR(255) NOT NULL
-
-    // )`);
-
-    //! Insert into table(Not Recommened) using inline
-    // await db.execute(`INSERT INTO users (username, email, password) VALUES("prakash", "prakash123567891123@gmail.com","123456")`);
-
-    //! Uisng Prepared statements(single insertion)
-    //   await db.execute(`INSERT INTO tasks (title, description) VALUES(?,?)`,["ReactLogin", "Madeuysiongtailwindcss"]);
-
-    // const values = [
-
-    //     ["prashraya", "prashraya33333334411@gmail.com","12234"],
-    //     ["pralaya", "pralaya11114444@gmail.com","123456"],
-
-    // ]
-
-    // await db.query("insert into users(username, email, password) values ?", [values]);
-
-    // const [rows1] =  await db.execute(`Select * from users where username = "prakash"`);
-
-    // console.log(rows1);
-
-    //!Read From Table
-
-    //    const [rows] =  await db.execute(`Select * from users`);
-
-    //    console.log(rows);
-
-    //!Delete from table
-
-    // const [rows] = await db.execute(`DELETE FROM users WHERE username = "prakash"`);
-
-    //  console.log(rows);
-
-    //  const [users] = await db.execute(`select * from users`);
-
-    //  console.log(users);
-  } catch (error) {
-    console.log("Error connecting to mysql db", error);
-  }
-}
-
-// 2. we need to create a db;
-
-setupDatabase();
-
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
-// PostUser
