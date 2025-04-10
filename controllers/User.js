@@ -91,7 +91,7 @@ const userLoginController = async (req, res) => {
 
     res.cookie("authToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Disable in development (no HTTPS)
+      secure: false, // Disable in development (no HTTPS)
       maxAge: 3600000, // 1 hour expiry
       sameSite: "lax", // 'strict' can block cookies in localhost
     });
@@ -99,9 +99,13 @@ const userLoginController = async (req, res) => {
     res.status(200).json({
       message: "User logged in successfully",
       token,
-      id: user[0][0].id,
-      username: user[0][0].username,
-      email: user[0][0].email,
+      user:{
+        id: user[0][0].id,
+        username: user[0][0].username,
+        email: user[0][0].email,
+
+      }
+   
     });
   } catch (error) {
     console.log(error);

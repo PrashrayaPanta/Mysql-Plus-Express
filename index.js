@@ -19,10 +19,17 @@ const app = express();
 
 //! Load environment variables from a .env file using dotenv
 import dotenv from "dotenv"; 
+
 dotenv.config(); 
 
+const corsOptions = {
+  origin: "http://localhost:5173", // Replace with your frontend URL
+  credentials: true, 
+
+}
+
 // Middleware Setup
-app.use(cors()); // Use the CORS middleware to allow cross-origin requests
+app.use(cors(corsOptions)); // Use the CORS middleware to allow cross-origin requests
 
 
 //!Port Initlixation
