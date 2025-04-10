@@ -145,7 +145,7 @@ const userLogoutController = (req, res) =>{
     res.clearCookie("authToken");
 
     res.status(200).json({
-        message: "User logged out successfully",
+        message: "User logged out successfully",  
       });
 
 }
