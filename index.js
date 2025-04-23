@@ -43,7 +43,7 @@ import userRouter from "./Routes/users.js";
 
 
 //!Task Route
-import postRouter from "./Routes/Post.js";
+import taskRouter from "./Routes/Task.js";
 
 
 //!Send the json reponse from the client
@@ -63,7 +63,7 @@ app.use("/", userRouter);
 
 //!Task Routes
 
-app.use("/tasks", postRouter);
+app.use("/tasks", taskRouter);
 
 
 
