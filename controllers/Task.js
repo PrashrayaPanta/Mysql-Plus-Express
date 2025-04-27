@@ -1,10 +1,11 @@
 import { connectDB } from "../db/connectDb.js";
 
+import { db } from "../index.js";
+
 
 const PostTaskController = async (req, res) => {
   try {
    
-    const db = await connectDB();
 
     const { title, description } = req.body;
 
@@ -23,7 +24,7 @@ const PostTaskController = async (req, res) => {
 
 const getTasksController = async (req, res) => {
   try {
-    const db = await connectDB();
+
     console.log(req.user_id);
 
     const [rows] = await db.execute(`SELECT * FROM tasks WHERE user_id = ?`, [
@@ -41,7 +42,7 @@ const getTasksController = async (req, res) => {
 
 const deleteTaskController = async (req, res) => {
     try {
-      const db = await connectDB();
+
       const { id } = req.params; // task ID
       const userId = req.user_id; // assumed to be set via auth middleware
   

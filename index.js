@@ -1,6 +1,10 @@
 
 // / Express framework for handling HTTP requests and routing
-import express from "express";   
+import express from "express";  
+
+
+
+import mysql from "mysql2/promise";
 
 //!  Middleware for parsing cookies in requests
 
@@ -27,6 +31,34 @@ const corsOptions = {
   credentials: true, 
 
 }
+
+ const connectDB = async(req, res) =>{
+  try{
+      const db = await mysql.createConnection({
+          host: process.env.DB_HOST,
+          port: process.env.DB_PORT,
+          user: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+          database: process.env.DB_NAME,
+     });
+
+     console.log("succesfully connected");
+     return db;
+  }catch(error){
+      console.log(error);
+  }
+}
+
+
+const db = await connectDB();
+
+
+export {db}
+
+
+
+
+
 
 // Middleware Setup
 app.use(cors(corsOptions)); // Use the CORS middleware to allow cross-origin requests

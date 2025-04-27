@@ -1,12 +1,12 @@
 import jwt from 'jsonwebtoken';
 
 import dotenv from 'dotenv';
+
 dotenv.config();
+
 export const isLogin = (req, res, next) =>{
 
     //get token from cookies
-
-
     //get token from the headers
     const token = req.cookies.authToken;
 

@@ -1,11 +1,12 @@
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { connectDB } from "../db/connectDb.js";
+import { db } from "../index.js";
+
 
 const UserRegisterController = async (req, res) => {
   try {
-   const db =  await connectDB();
+
     const { username, email, password } = req.body;
 
     //! Validations
@@ -61,8 +62,6 @@ const UserRegisterController = async (req, res) => {
 
 const userLoginController = async (req, res) => {
   try {
-    const db =  await connectDB();
-
     const { email, password } = req.body;
 
     //! Check if user email exists
@@ -118,7 +117,6 @@ const userProfileController = async(req, res) =>{
 
     try{
 
-        const db =  await connectDB();
         const [user] = await db.execute(`SELECT * FROM users WHERE id = ?`, [
           req.user_id,
         ]);
