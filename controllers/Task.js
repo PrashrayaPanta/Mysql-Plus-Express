@@ -1,4 +1,4 @@
-import { connectDB } from "../db/connectDb.js";
+
 
 import { db } from "../index.js";
 
